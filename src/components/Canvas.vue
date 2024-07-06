@@ -1,52 +1,82 @@
 <template>
-    <div class="canvas">
-        <canvas class="canvas__panel" ref="canvas"></canvas>
-    </div>
+    <canvas class="canvas" ref="canvas"></canvas>
 </template>
-<script setup lang="js">
-    import { ref, onMounted } from 'vue';
+<script setup lang="ts">
+    import { ref, onMounted, render, computed, watch, onBeforeMount } from 'vue';
     import * as THREE from 'three';
+    import { useWindowSize } from '@vueuse/core';
 
-    const canvas = ref(null);
     const props = defineProps({
-        iterations: Number,
-        roughtness: Number
+        iterations: {
+            type: Number,
+            default: 1
+        },
+        roughtness: {
+            type: Number,
+            default: 1
+        }
     });
+
+    let renderer: THREE.WebGLRenderer;
+    let camera: THREE.PerspectiveCamera;
+    const canvas = ref<HTMLCanvasElement | null>(null);
+    const scene = new THREE.Scene();
+    const width = remToPixels(50);
+    const height = remToPixels(50);
+    const aspectRatio = computed(() => 1);
+    const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(1, props.roughtness, props.iterations),
+        new THREE.MeshBasicMaterial({ color: 0x008080 })
+    );
+
+    onBeforeMount(() => {
+        camera = new THREE.PerspectiveCamera(75, aspectRatio.value, 0.1, 1000);
+        camera.position.z = 5;
+        scene.add(camera);
+
+        scene.add(sphere);
+    })
+    
+    
+    
 
     onMounted(() => {
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, canvas.value.offsetWidth / window.offsetHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
-        renderer.setSize(canvas.value.offsetWidth, window.offsetHeight);
-        canvas.value.children.append(renderer.domElement);
-        
-        const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-        const cube = new THREE.Mesh( geometry, material );
-        scene.add( cube );
+        renderer = new THREE.WebGLRenderer({
+            canvas: canvas.value as unknown as HTMLCanvasElement,
+            antialias: true
+        });
+        updateRenderer();
+        updateCamera();
 
-        camera.position.z = 5;
+        renderer.render(scene, camera);
+    })
 
-        function animate() {
-            renderer.render( scene, camera );
-        }
-        renderer.setAnimationLoop( animate );
-    });
+    watch(aspectRatio, updateRenderer)
+    watch(camera, updateCamera)
+    watch(() => props.iterations, updateSphere)
+    watch(() => props.roughtness, updateSphere)
 
 
-    
+    function updateRenderer() {
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(window.devicePixelRatio);
+    }
+
+    function updateCamera(){
+        camera.aspect = aspectRatio.value;
+        camera.updateProjectionMatrix();
+    }
+
+    function updateSphere(){
+        sphere.geometry.dispose();
+        sphere.geometry = new THREE.SphereGeometry(1, props.iterations, props.roughtness);
+        renderer.render(scene, camera);
+    }
+
+    function remToPixels(rem: number) {
+        return rem * 16;
+    }
 </script>
 
 <style scoped lang="scss">
-    .canvas {
-        width: 65%;
-        height: 40rem;
-        background-color: black;
-        border-radius: 5px;
-
-        .canvas__panel {
-            width: 100%;
-            height: 100%;
-        }
-    }
 </style>

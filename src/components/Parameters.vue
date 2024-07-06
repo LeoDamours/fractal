@@ -21,7 +21,7 @@
         </div>
     </div>
 </template>
-<script setup lang="js">
+<script setup lang="ts">
     import { ref, defineEmits } from 'vue';
 
     const iterations_value = ref(1);
@@ -29,17 +29,21 @@
 
     const emit = defineEmits(['changeIterations', 'changeRoughtness']);
 
-    function changeRoughtnessValue(event) {
-        roughtness_value.value = validateValue(event.target.value);
-        emit('changeRoughtness', roughtness_value.value);
+    function changeRoughtnessValue(event: Event): void {
+        if (event.target instanceof HTMLInputElement) {
+            roughtness_value.value = validateValue(event.target.value);
+            emit('changeRoughtness', roughtness_value.value);
+        }
     }
 
-    function changeIterationValue(event) {
-        iterations_value.value = validateValue(event.target.value);
-        emit('changeIterations', iterations_value.value);
+    function changeIterationValue(event: Event): void {
+        if (event.target instanceof HTMLInputElement) {
+            iterations_value.value = validateValue(event.target.value);
+            emit('changeIterations', iterations_value.value);
+        }
     }
 
-    function validateValue(value) {
+    function validateValue(value: string | number): number {
         if (typeof value !== 'number') {
             try {
                 value = parseInt(value);
