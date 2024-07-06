@@ -4,7 +4,8 @@
 <script setup lang="ts">
     import { ref, onMounted, render, computed, watch, onBeforeMount } from 'vue';
     import * as THREE from 'three';
-    import { useWindowSize } from '@vueuse/core';
+    import ConcreteMeshFactories from '../threejs/factories/MeshFactories';
+    import { EnumMaterials } from '../threejs/enums/EnumMaterials';
 
     const props = defineProps({
         iterations: {
@@ -24,22 +25,16 @@
     const width = remToPixels(50);
     const height = remToPixels(50);
     const aspectRatio = computed(() => 1);
-    const sphere = new THREE.Mesh(
-        new THREE.SphereGeometry(1, props.roughtness, props.iterations),
-        new THREE.MeshBasicMaterial({ color: 0x008080 })
+    const boxFactory = ConcreteMeshFactories.createBoxFactory();
+    const shape = new THREE.Mesh(
+        boxFactory.createMesh(1,1,1,1,1,1),
+        new THREE.MeshBasicMaterial({ color: EnumMaterials.SEAFOAM })
     );
-
-    onBeforeMount(() => {
-        camera = new THREE.PerspectiveCamera(75, aspectRatio.value, 0.1, 1000);
-        camera.position.z = 5;
-        scene.add(camera);
-
-        scene.add(sphere);
-    })
+    camera = new THREE.PerspectiveCamera(75, aspectRatio.value, 0.1, 1000);
+    camera.position.z = 5;
+    scene.add(camera);
+    scene.add(shape);
     
-    
-    
-
     onMounted(() => {
         renderer = new THREE.WebGLRenderer({
             canvas: canvas.value as unknown as HTMLCanvasElement,
@@ -68,8 +63,8 @@
     }
 
     function updateSphere(){
-        sphere.geometry.dispose();
-        sphere.geometry = new THREE.SphereGeometry(1, props.iterations, props.roughtness);
+        shape.geometry.dispose();
+        shape.geometry = boxFactory.createMesh(1,1,1,1,1,1);
         renderer.render(scene, camera);
     }
 
